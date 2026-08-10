@@ -1,0 +1,35 @@
+// control and status for on-chip voltage regulator and chip level reset subsystem
+
+module sh.sysl.rp2040.vreg_and_chip_reset
+
+// The peripheral's base address. Every offset below is from here.
+const BASE: u32 = 0x40064000
+
+// Voltage regulator control and status
+const VREG_OFFSET: u32 = 0x00000000
+const VREG_ROK_MASK: u32 = 0x00001000
+const VREG_ROK_SHIFT: u32 = 12
+const VREG_VSEL_MASK: u32 = 0x000000f0
+const VREG_VSEL_SHIFT: u32 = 4
+const VREG_HIZ_MASK: u32 = 0x00000002
+const VREG_HIZ_SHIFT: u32 = 1
+const VREG_EN_MASK: u32 = 0x00000001
+const VREG_EN_SHIFT: u32 = 0
+
+// brown-out detection control
+const BOD_OFFSET: u32 = 0x00000004
+const BOD_VSEL_MASK: u32 = 0x000000f0
+const BOD_VSEL_SHIFT: u32 = 4
+const BOD_EN_MASK: u32 = 0x00000001
+const BOD_EN_SHIFT: u32 = 0
+
+// Chip reset control and status
+const CHIP_RESET_OFFSET: u32 = 0x00000008
+const CHIP_RESET_PSM_RESTART_FLAG_MASK: u32 = 0x01000000
+const CHIP_RESET_PSM_RESTART_FLAG_SHIFT: u32 = 24
+const CHIP_RESET_HAD_PSM_RESTART_MASK: u32 = 0x00100000
+const CHIP_RESET_HAD_PSM_RESTART_SHIFT: u32 = 20
+const CHIP_RESET_HAD_RUN_MASK: u32 = 0x00010000
+const CHIP_RESET_HAD_RUN_SHIFT: u32 = 16
+const CHIP_RESET_HAD_POR_MASK: u32 = 0x00000100
+const CHIP_RESET_HAD_POR_SHIFT: u32 = 8

@@ -1,0 +1,311 @@
+module sh.sysl.rp2040.ppb
+
+// The peripheral's base address. Every offset below is from here.
+const BASE: u32 = 0xe0000000
+
+// Use the SysTick Control and Status Register to enable the SysTick features.
+const SYST_CSR_OFFSET: u32 = 0x0000e010
+const SYST_CSR_COUNTFLAG_MASK: u32 = 0x00010000
+const SYST_CSR_COUNTFLAG_SHIFT: u32 = 16
+const SYST_CSR_CLKSOURCE_MASK: u32 = 0x00000004
+const SYST_CSR_CLKSOURCE_SHIFT: u32 = 2
+const SYST_CSR_TICKINT_MASK: u32 = 0x00000002
+const SYST_CSR_TICKINT_SHIFT: u32 = 1
+const SYST_CSR_ENABLE_MASK: u32 = 0x00000001
+const SYST_CSR_ENABLE_SHIFT: u32 = 0
+
+// Use the SysTick Reload Value Register to specify the start value to load into the current value
+// register when the counter reaches 0. It can be any value between 0 and 0x00FFFFFF. A start value
+// of 0 is possible, but has no effect because the SysTick interrupt and COUNTFLAG are activated
+// when counting from 1 to 0. The reset value of this register is UNKNOWN. To generate a multi-shot
+// timer with a period of N processor clock cycles, use a RELOAD value of N-1. For example, if the
+// SysTick interrupt is required every 100 clock pulses, set RELOAD to 99.
+const SYST_RVR_OFFSET: u32 = 0x0000e014
+const SYST_RVR_RELOAD_MASK: u32 = 0x00ffffff
+const SYST_RVR_RELOAD_SHIFT: u32 = 0
+
+// Use the SysTick Current Value Register to find the current value in the register. The reset
+// value of this register is UNKNOWN.
+const SYST_CVR_OFFSET: u32 = 0x0000e018
+const SYST_CVR_CURRENT_MASK: u32 = 0x00ffffff
+const SYST_CVR_CURRENT_SHIFT: u32 = 0
+
+// Use the SysTick Calibration Value Register to enable software to scale to any required speed
+// using divide and multiply.
+const SYST_CALIB_OFFSET: u32 = 0x0000e01c
+const SYST_CALIB_NOREF_MASK: u32 = 0x80000000
+const SYST_CALIB_NOREF_SHIFT: u32 = 31
+const SYST_CALIB_SKEW_MASK: u32 = 0x40000000
+const SYST_CALIB_SKEW_SHIFT: u32 = 30
+const SYST_CALIB_TENMS_MASK: u32 = 0x00ffffff
+const SYST_CALIB_TENMS_SHIFT: u32 = 0
+
+// Use the Interrupt Set-Enable Register to enable interrupts and determine which interrupts are
+// currently enabled. If a pending interrupt is enabled, the NVIC activates the interrupt based on
+// its priority. If an interrupt is not enabled, asserting its interrupt signal changes the
+// interrupt state to pending, but the NVIC never activates the interrupt, regardless of its
+// priority.
+const NVIC_ISER_OFFSET: u32 = 0x0000e100
+const NVIC_ISER_SETENA_MASK: u32 = 0xffffffff
+const NVIC_ISER_SETENA_SHIFT: u32 = 0
+
+// Use the Interrupt Clear-Enable Registers to disable interrupts and determine which interrupts
+// are currently enabled.
+const NVIC_ICER_OFFSET: u32 = 0x0000e180
+const NVIC_ICER_CLRENA_MASK: u32 = 0xffffffff
+const NVIC_ICER_CLRENA_SHIFT: u32 = 0
+
+// The NVIC_ISPR forces interrupts into the pending state, and shows which interrupts are pending.
+const NVIC_ISPR_OFFSET: u32 = 0x0000e200
+const NVIC_ISPR_SETPEND_MASK: u32 = 0xffffffff
+const NVIC_ISPR_SETPEND_SHIFT: u32 = 0
+
+// Use the Interrupt Clear-Pending Register to clear pending interrupts and determine which
+// interrupts are currently pending.
+const NVIC_ICPR_OFFSET: u32 = 0x0000e280
+const NVIC_ICPR_CLRPEND_MASK: u32 = 0xffffffff
+const NVIC_ICPR_CLRPEND_SHIFT: u32 = 0
+
+// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to each of the available
+// interrupts. 0 is the highest priority, and 3 is the lowest. Note: Writing 1 to an NVIC_ICPR bit
+// does not affect the active state of the corresponding interrupt. These registers are only
+// word-accessible
+const NVIC_IPR0_OFFSET: u32 = 0x0000e400
+const NVIC_IPR0_IP_3_MASK: u32 = 0xc0000000
+const NVIC_IPR0_IP_3_SHIFT: u32 = 30
+const NVIC_IPR0_IP_2_MASK: u32 = 0x00c00000
+const NVIC_IPR0_IP_2_SHIFT: u32 = 22
+const NVIC_IPR0_IP_1_MASK: u32 = 0x0000c000
+const NVIC_IPR0_IP_1_SHIFT: u32 = 14
+const NVIC_IPR0_IP_0_MASK: u32 = 0x000000c0
+const NVIC_IPR0_IP_0_SHIFT: u32 = 6
+
+// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to each of the available
+// interrupts. 0 is the highest priority, and 3 is the lowest.
+const NVIC_IPR1_OFFSET: u32 = 0x0000e404
+const NVIC_IPR1_IP_7_MASK: u32 = 0xc0000000
+const NVIC_IPR1_IP_7_SHIFT: u32 = 30
+const NVIC_IPR1_IP_6_MASK: u32 = 0x00c00000
+const NVIC_IPR1_IP_6_SHIFT: u32 = 22
+const NVIC_IPR1_IP_5_MASK: u32 = 0x0000c000
+const NVIC_IPR1_IP_5_SHIFT: u32 = 14
+const NVIC_IPR1_IP_4_MASK: u32 = 0x000000c0
+const NVIC_IPR1_IP_4_SHIFT: u32 = 6
+
+// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to each of the available
+// interrupts. 0 is the highest priority, and 3 is the lowest.
+const NVIC_IPR2_OFFSET: u32 = 0x0000e408
+const NVIC_IPR2_IP_11_MASK: u32 = 0xc0000000
+const NVIC_IPR2_IP_11_SHIFT: u32 = 30
+const NVIC_IPR2_IP_10_MASK: u32 = 0x00c00000
+const NVIC_IPR2_IP_10_SHIFT: u32 = 22
+const NVIC_IPR2_IP_9_MASK: u32 = 0x0000c000
+const NVIC_IPR2_IP_9_SHIFT: u32 = 14
+const NVIC_IPR2_IP_8_MASK: u32 = 0x000000c0
+const NVIC_IPR2_IP_8_SHIFT: u32 = 6
+
+// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to each of the available
+// interrupts. 0 is the highest priority, and 3 is the lowest.
+const NVIC_IPR3_OFFSET: u32 = 0x0000e40c
+const NVIC_IPR3_IP_15_MASK: u32 = 0xc0000000
+const NVIC_IPR3_IP_15_SHIFT: u32 = 30
+const NVIC_IPR3_IP_14_MASK: u32 = 0x00c00000
+const NVIC_IPR3_IP_14_SHIFT: u32 = 22
+const NVIC_IPR3_IP_13_MASK: u32 = 0x0000c000
+const NVIC_IPR3_IP_13_SHIFT: u32 = 14
+const NVIC_IPR3_IP_12_MASK: u32 = 0x000000c0
+const NVIC_IPR3_IP_12_SHIFT: u32 = 6
+
+// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to each of the available
+// interrupts. 0 is the highest priority, and 3 is the lowest.
+const NVIC_IPR4_OFFSET: u32 = 0x0000e410
+const NVIC_IPR4_IP_19_MASK: u32 = 0xc0000000
+const NVIC_IPR4_IP_19_SHIFT: u32 = 30
+const NVIC_IPR4_IP_18_MASK: u32 = 0x00c00000
+const NVIC_IPR4_IP_18_SHIFT: u32 = 22
+const NVIC_IPR4_IP_17_MASK: u32 = 0x0000c000
+const NVIC_IPR4_IP_17_SHIFT: u32 = 14
+const NVIC_IPR4_IP_16_MASK: u32 = 0x000000c0
+const NVIC_IPR4_IP_16_SHIFT: u32 = 6
+
+// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to each of the available
+// interrupts. 0 is the highest priority, and 3 is the lowest.
+const NVIC_IPR5_OFFSET: u32 = 0x0000e414
+const NVIC_IPR5_IP_23_MASK: u32 = 0xc0000000
+const NVIC_IPR5_IP_23_SHIFT: u32 = 30
+const NVIC_IPR5_IP_22_MASK: u32 = 0x00c00000
+const NVIC_IPR5_IP_22_SHIFT: u32 = 22
+const NVIC_IPR5_IP_21_MASK: u32 = 0x0000c000
+const NVIC_IPR5_IP_21_SHIFT: u32 = 14
+const NVIC_IPR5_IP_20_MASK: u32 = 0x000000c0
+const NVIC_IPR5_IP_20_SHIFT: u32 = 6
+
+// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to each of the available
+// interrupts. 0 is the highest priority, and 3 is the lowest.
+const NVIC_IPR6_OFFSET: u32 = 0x0000e418
+const NVIC_IPR6_IP_27_MASK: u32 = 0xc0000000
+const NVIC_IPR6_IP_27_SHIFT: u32 = 30
+const NVIC_IPR6_IP_26_MASK: u32 = 0x00c00000
+const NVIC_IPR6_IP_26_SHIFT: u32 = 22
+const NVIC_IPR6_IP_25_MASK: u32 = 0x0000c000
+const NVIC_IPR6_IP_25_SHIFT: u32 = 14
+const NVIC_IPR6_IP_24_MASK: u32 = 0x000000c0
+const NVIC_IPR6_IP_24_SHIFT: u32 = 6
+
+// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to each of the available
+// interrupts. 0 is the highest priority, and 3 is the lowest.
+const NVIC_IPR7_OFFSET: u32 = 0x0000e41c
+const NVIC_IPR7_IP_31_MASK: u32 = 0xc0000000
+const NVIC_IPR7_IP_31_SHIFT: u32 = 30
+const NVIC_IPR7_IP_30_MASK: u32 = 0x00c00000
+const NVIC_IPR7_IP_30_SHIFT: u32 = 22
+const NVIC_IPR7_IP_29_MASK: u32 = 0x0000c000
+const NVIC_IPR7_IP_29_SHIFT: u32 = 14
+const NVIC_IPR7_IP_28_MASK: u32 = 0x000000c0
+const NVIC_IPR7_IP_28_SHIFT: u32 = 6
+
+// Read the CPU ID Base Register to determine: the ID number of the processor core, the version
+// number of the processor core, the implementation details of the processor core.
+const CPUID_OFFSET: u32 = 0x0000ed00
+const CPUID_IMPLEMENTER_MASK: u32 = 0xff000000
+const CPUID_IMPLEMENTER_SHIFT: u32 = 24
+const CPUID_VARIANT_MASK: u32 = 0x00f00000
+const CPUID_VARIANT_SHIFT: u32 = 20
+const CPUID_ARCHITECTURE_MASK: u32 = 0x000f0000
+const CPUID_ARCHITECTURE_SHIFT: u32 = 16
+const CPUID_PARTNO_MASK: u32 = 0x0000fff0
+const CPUID_PARTNO_SHIFT: u32 = 4
+const CPUID_REVISION_MASK: u32 = 0x0000000f
+const CPUID_REVISION_SHIFT: u32 = 0
+
+// Use the Interrupt Control State Register to set a pending Non-Maskable Interrupt (NMI), set or
+// clear a pending PendSV, set or clear a pending SysTick, check for pending exceptions, check the
+// vector number of the highest priority pended exception, check the vector number of the active
+// exception.
+const ICSR_OFFSET: u32 = 0x0000ed04
+const ICSR_NMIPENDSET_MASK: u32 = 0x80000000
+const ICSR_NMIPENDSET_SHIFT: u32 = 31
+const ICSR_PENDSVSET_MASK: u32 = 0x10000000
+const ICSR_PENDSVSET_SHIFT: u32 = 28
+const ICSR_PENDSVCLR_MASK: u32 = 0x08000000
+const ICSR_PENDSVCLR_SHIFT: u32 = 27
+const ICSR_PENDSTSET_MASK: u32 = 0x04000000
+const ICSR_PENDSTSET_SHIFT: u32 = 26
+const ICSR_PENDSTCLR_MASK: u32 = 0x02000000
+const ICSR_PENDSTCLR_SHIFT: u32 = 25
+const ICSR_ISRPREEMPT_MASK: u32 = 0x00800000
+const ICSR_ISRPREEMPT_SHIFT: u32 = 23
+const ICSR_ISRPENDING_MASK: u32 = 0x00400000
+const ICSR_ISRPENDING_SHIFT: u32 = 22
+const ICSR_VECTPENDING_MASK: u32 = 0x001ff000
+const ICSR_VECTPENDING_SHIFT: u32 = 12
+const ICSR_VECTACTIVE_MASK: u32 = 0x000001ff
+const ICSR_VECTACTIVE_SHIFT: u32 = 0
+
+// The VTOR holds the vector table offset address.
+const VTOR_OFFSET: u32 = 0x0000ed08
+const VTOR_TBLOFF_MASK: u32 = 0xffffff00
+const VTOR_TBLOFF_SHIFT: u32 = 8
+
+// Use the Application Interrupt and Reset Control Register to: determine data endianness, clear
+// all active state information from debug halt mode, request a system reset.
+const AIRCR_OFFSET: u32 = 0x0000ed0c
+const AIRCR_VECTKEY_MASK: u32 = 0xffff0000
+const AIRCR_VECTKEY_SHIFT: u32 = 16
+const AIRCR_ENDIANESS_MASK: u32 = 0x00008000
+const AIRCR_ENDIANESS_SHIFT: u32 = 15
+const AIRCR_SYSRESETREQ_MASK: u32 = 0x00000004
+const AIRCR_SYSRESETREQ_SHIFT: u32 = 2
+const AIRCR_VECTCLRACTIVE_MASK: u32 = 0x00000002
+const AIRCR_VECTCLRACTIVE_SHIFT: u32 = 1
+
+// System Control Register. Use the System Control Register for power-management functions: signal
+// to the system when the processor can enter a low power state, control how the processor enters
+// and exits low power states.
+const SCR_OFFSET: u32 = 0x0000ed10
+const SCR_SEVONPEND_MASK: u32 = 0x00000010
+const SCR_SEVONPEND_SHIFT: u32 = 4
+const SCR_SLEEPDEEP_MASK: u32 = 0x00000004
+const SCR_SLEEPDEEP_SHIFT: u32 = 2
+const SCR_SLEEPONEXIT_MASK: u32 = 0x00000002
+const SCR_SLEEPONEXIT_SHIFT: u32 = 1
+
+// The Configuration and Control Register permanently enables stack alignment and causes unaligned
+// accesses to result in a Hard Fault.
+const CCR_OFFSET: u32 = 0x0000ed14
+const CCR_STKALIGN_MASK: u32 = 0x00000200
+const CCR_STKALIGN_SHIFT: u32 = 9
+const CCR_UNALIGN_TRP_MASK: u32 = 0x00000008
+const CCR_UNALIGN_TRP_SHIFT: u32 = 3
+
+// System handlers are a special class of exception handler that can have their priority set to any
+// of the priority levels. Use the System Handler Priority Register 2 to set the priority of
+// SVCall.
+const SHPR2_OFFSET: u32 = 0x0000ed1c
+const SHPR2_PRI_11_MASK: u32 = 0xc0000000
+const SHPR2_PRI_11_SHIFT: u32 = 30
+
+// System handlers are a special class of exception handler that can have their priority set to any
+// of the priority levels. Use the System Handler Priority Register 3 to set the priority of PendSV
+// and SysTick.
+const SHPR3_OFFSET: u32 = 0x0000ed20
+const SHPR3_PRI_15_MASK: u32 = 0xc0000000
+const SHPR3_PRI_15_SHIFT: u32 = 30
+const SHPR3_PRI_14_MASK: u32 = 0x00c00000
+const SHPR3_PRI_14_SHIFT: u32 = 22
+
+// Use the System Handler Control and State Register to determine or clear the pending status of
+// SVCall.
+const SHCSR_OFFSET: u32 = 0x0000ed24
+const SHCSR_SVCALLPENDED_MASK: u32 = 0x00008000
+const SHCSR_SVCALLPENDED_SHIFT: u32 = 15
+
+// Read the MPU Type Register to determine if the processor implements an MPU, and how many regions
+// the MPU supports.
+const MPU_TYPE_OFFSET: u32 = 0x0000ed90
+const MPU_TYPE_IREGION_MASK: u32 = 0x00ff0000
+const MPU_TYPE_IREGION_SHIFT: u32 = 16
+const MPU_TYPE_DREGION_MASK: u32 = 0x0000ff00
+const MPU_TYPE_DREGION_SHIFT: u32 = 8
+const MPU_TYPE_SEPARATE_MASK: u32 = 0x00000001
+const MPU_TYPE_SEPARATE_SHIFT: u32 = 0
+
+// Use the MPU Control Register to enable and disable the MPU, and to control whether the default
+// memory map is enabled as a background region for privileged accesses, and whether the MPU is
+// enabled for HardFaults and NMIs.
+const MPU_CTRL_OFFSET: u32 = 0x0000ed94
+const MPU_CTRL_PRIVDEFENA_MASK: u32 = 0x00000004
+const MPU_CTRL_PRIVDEFENA_SHIFT: u32 = 2
+const MPU_CTRL_HFNMIENA_MASK: u32 = 0x00000002
+const MPU_CTRL_HFNMIENA_SHIFT: u32 = 1
+const MPU_CTRL_ENABLE_MASK: u32 = 0x00000001
+const MPU_CTRL_ENABLE_SHIFT: u32 = 0
+
+// Use the MPU Region Number Register to select the region currently accessed by MPU_RBAR and
+// MPU_RASR.
+const MPU_RNR_OFFSET: u32 = 0x0000ed98
+const MPU_RNR_REGION_MASK: u32 = 0x0000000f
+const MPU_RNR_REGION_SHIFT: u32 = 0
+
+// Read the MPU Region Base Address Register to determine the base address of the region identified
+// by MPU_RNR. Write to update the base address of said region or that of a specified region, with
+// whose number MPU_RNR will also be updated.
+const MPU_RBAR_OFFSET: u32 = 0x0000ed9c
+const MPU_RBAR_ADDR_MASK: u32 = 0xffffff00
+const MPU_RBAR_ADDR_SHIFT: u32 = 8
+const MPU_RBAR_VALID_MASK: u32 = 0x00000010
+const MPU_RBAR_VALID_SHIFT: u32 = 4
+const MPU_RBAR_REGION_MASK: u32 = 0x0000000f
+const MPU_RBAR_REGION_SHIFT: u32 = 0
+
+// Use the MPU Region Attribute and Size Register to define the size, access behaviour and memory
+// type of the region identified by MPU_RNR, and enable that region.
+const MPU_RASR_OFFSET: u32 = 0x0000eda0
+const MPU_RASR_ATTRS_MASK: u32 = 0xffff0000
+const MPU_RASR_ATTRS_SHIFT: u32 = 16
+const MPU_RASR_SRD_MASK: u32 = 0x0000ff00
+const MPU_RASR_SRD_SHIFT: u32 = 8
+const MPU_RASR_SIZE_MASK: u32 = 0x0000003e
+const MPU_RASR_SIZE_SHIFT: u32 = 1
+const MPU_RASR_ENABLE_MASK: u32 = 0x00000001
+const MPU_RASR_ENABLE_SHIFT: u32 = 0

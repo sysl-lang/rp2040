@@ -1,0 +1,271 @@
+// DW_apb_ssi has the following features: * APB interface – Allows for easy integration into a
+// DesignWare Synthesizable Components for AMBA 2 implementation. * APB3 and APB4 protocol support.
+// * Scalable APB data bus width – Supports APB data bus widths of 8, 16, and 32 bits. *
+// Serial-master or serial-slave operation – Enables serial communication with serial-master or
+// serial-slave peripheral devices. * Programmable Dual/Quad/Octal SPI support in Master Mode. *
+// Dual Data Rate (DDR) and Read Data Strobe (RDS) Support - Enables the DW_apb_ssi master to
+// perform operations with the device in DDR and RDS modes when working in Dual/Quad/Octal mode of
+// operation. * Data Mask Support - Enables the DW_apb_ssi to selectively update the bytes in the
+// device. This feature is applicable only in enhanced SPI modes. * eXecute-In-Place (XIP) support
+// - Enables the DW_apb_ssi master to behave as a memory mapped I/O and fetches the data from the
+// device based on the APB read request. This feature is applicable only in enhanced SPI modes. *
+// DMA Controller Interface – Enables the DW_apb_ssi to interface to a DMA controller over the bus
+// using a handshaking interface for transfer requests. * Independent masking of interrupts –
+// Master collision, transmit FIFO overflow, transmit FIFO empty, receive FIFO full, receive FIFO
+// underflow, and receive FIFO overflow interrupts can all be masked independently. * Multi-master
+// contention detection – Informs the processor of multiple serial-master accesses on the serial
+// bus. * Bypass of meta-stability flip-flops for synchronous clocks – When the APB clock (pclk)
+// and the DW_apb_ssi serial clock (ssi_clk) are synchronous, meta-stable flip-flops are not used
+// when transferring control signals across these clock domains. * Programmable delay on the sample
+// time of the received serial data bit (rxd); enables programmable control of routing delays
+// resulting in higher serial data-bit rates. * Programmable features: - Serial interface operation
+// – Choice of Motorola SPI, Texas Instruments Synchronous Serial Protocol or National
+// Semiconductor Microwire. - Clock bit-rate – Dynamic control of the serial bit rate of the data
+// transfer; used in only serial-master mode of operation. - Data Item size (4 to 32 bits) – Item
+// size of each data transfer under the control of the programmer. * Configured features: - FIFO
+// depth – 16 words deep. The FIFO width is fixed at 32 bits. - 1 slave select output. - Hardware
+// slave-select – Dedicated hardware slave-select line. - Combined interrupt line - one combined
+// interrupt line from the DW_apb_ssi to the interrupt controller. - Interrupt polarity – active
+// high interrupt lines. - Serial clock polarity – low serial-clock polarity directly after reset.
+// - Serial clock phase – capture on first edge of serial-clock directly after reset.
+
+module sh.sysl.rp2040.ssi
+
+// The peripheral's base address. Every offset below is from here.
+const BASE: u32 = 0x18000000
+
+// Control register 0
+const CTRLR0_OFFSET: u32 = 0x00000000
+const CTRLR0_SSTE_MASK: u32 = 0x01000000
+const CTRLR0_SSTE_SHIFT: u32 = 24
+const CTRLR0_SPI_FRF_MASK: u32 = 0x00600000
+const CTRLR0_SPI_FRF_SHIFT: u32 = 21
+const CTRLR0_SPI_FRF_STD: u32 = 0
+const CTRLR0_SPI_FRF_DUAL: u32 = 1
+const CTRLR0_SPI_FRF_QUAD: u32 = 2
+const CTRLR0_DFS_32_MASK: u32 = 0x001f0000
+const CTRLR0_DFS_32_SHIFT: u32 = 16
+const CTRLR0_CFS_MASK: u32 = 0x0000f000
+const CTRLR0_CFS_SHIFT: u32 = 12
+const CTRLR0_SRL_MASK: u32 = 0x00000800
+const CTRLR0_SRL_SHIFT: u32 = 11
+const CTRLR0_SLV_OE_MASK: u32 = 0x00000400
+const CTRLR0_SLV_OE_SHIFT: u32 = 10
+const CTRLR0_TMOD_MASK: u32 = 0x00000300
+const CTRLR0_TMOD_SHIFT: u32 = 8
+const CTRLR0_TMOD_TX_AND_RX: u32 = 0
+const CTRLR0_TMOD_TX_ONLY: u32 = 1
+const CTRLR0_TMOD_RX_ONLY: u32 = 2
+const CTRLR0_TMOD_EEPROM_READ: u32 = 3
+const CTRLR0_SCPOL_MASK: u32 = 0x00000080
+const CTRLR0_SCPOL_SHIFT: u32 = 7
+const CTRLR0_SCPH_MASK: u32 = 0x00000040
+const CTRLR0_SCPH_SHIFT: u32 = 6
+const CTRLR0_FRF_MASK: u32 = 0x00000030
+const CTRLR0_FRF_SHIFT: u32 = 4
+const CTRLR0_DFS_MASK: u32 = 0x0000000f
+const CTRLR0_DFS_SHIFT: u32 = 0
+
+// Master Control register 1
+const CTRLR1_OFFSET: u32 = 0x00000004
+const CTRLR1_NDF_MASK: u32 = 0x0000ffff
+const CTRLR1_NDF_SHIFT: u32 = 0
+
+// SSI Enable
+const SSIENR_OFFSET: u32 = 0x00000008
+const SSIENR_SSI_EN_MASK: u32 = 0x00000001
+const SSIENR_SSI_EN_SHIFT: u32 = 0
+
+// Microwire Control
+const MWCR_OFFSET: u32 = 0x0000000c
+const MWCR_MHS_MASK: u32 = 0x00000004
+const MWCR_MHS_SHIFT: u32 = 2
+const MWCR_MDD_MASK: u32 = 0x00000002
+const MWCR_MDD_SHIFT: u32 = 1
+const MWCR_MWMOD_MASK: u32 = 0x00000001
+const MWCR_MWMOD_SHIFT: u32 = 0
+
+// Slave enable
+const SER_OFFSET: u32 = 0x00000010
+const SER_SER_MASK: u32 = 0x00000001
+const SER_SER_SHIFT: u32 = 0
+
+// Baud rate
+const BAUDR_OFFSET: u32 = 0x00000014
+const BAUDR_SCKDV_MASK: u32 = 0x0000ffff
+const BAUDR_SCKDV_SHIFT: u32 = 0
+
+// TX FIFO threshold level
+const TXFTLR_OFFSET: u32 = 0x00000018
+const TXFTLR_TFT_MASK: u32 = 0x000000ff
+const TXFTLR_TFT_SHIFT: u32 = 0
+
+// RX FIFO threshold level
+const RXFTLR_OFFSET: u32 = 0x0000001c
+const RXFTLR_RFT_MASK: u32 = 0x000000ff
+const RXFTLR_RFT_SHIFT: u32 = 0
+
+// TX FIFO level
+const TXFLR_OFFSET: u32 = 0x00000020
+const TXFLR_TFTFL_MASK: u32 = 0x000000ff
+const TXFLR_TFTFL_SHIFT: u32 = 0
+
+// RX FIFO level
+const RXFLR_OFFSET: u32 = 0x00000024
+const RXFLR_RXTFL_MASK: u32 = 0x000000ff
+const RXFLR_RXTFL_SHIFT: u32 = 0
+
+// Status register
+const SR_OFFSET: u32 = 0x00000028
+const SR_DCOL_MASK: u32 = 0x00000040
+const SR_DCOL_SHIFT: u32 = 6
+const SR_TXE_MASK: u32 = 0x00000020
+const SR_TXE_SHIFT: u32 = 5
+const SR_RFF_MASK: u32 = 0x00000010
+const SR_RFF_SHIFT: u32 = 4
+const SR_RFNE_MASK: u32 = 0x00000008
+const SR_RFNE_SHIFT: u32 = 3
+const SR_TFE_MASK: u32 = 0x00000004
+const SR_TFE_SHIFT: u32 = 2
+const SR_TFNF_MASK: u32 = 0x00000002
+const SR_TFNF_SHIFT: u32 = 1
+const SR_BUSY_MASK: u32 = 0x00000001
+const SR_BUSY_SHIFT: u32 = 0
+
+// Interrupt mask
+const IMR_OFFSET: u32 = 0x0000002c
+const IMR_MSTIM_MASK: u32 = 0x00000020
+const IMR_MSTIM_SHIFT: u32 = 5
+const IMR_RXFIM_MASK: u32 = 0x00000010
+const IMR_RXFIM_SHIFT: u32 = 4
+const IMR_RXOIM_MASK: u32 = 0x00000008
+const IMR_RXOIM_SHIFT: u32 = 3
+const IMR_RXUIM_MASK: u32 = 0x00000004
+const IMR_RXUIM_SHIFT: u32 = 2
+const IMR_TXOIM_MASK: u32 = 0x00000002
+const IMR_TXOIM_SHIFT: u32 = 1
+const IMR_TXEIM_MASK: u32 = 0x00000001
+const IMR_TXEIM_SHIFT: u32 = 0
+
+// Interrupt status
+const ISR_OFFSET: u32 = 0x00000030
+const ISR_MSTIS_MASK: u32 = 0x00000020
+const ISR_MSTIS_SHIFT: u32 = 5
+const ISR_RXFIS_MASK: u32 = 0x00000010
+const ISR_RXFIS_SHIFT: u32 = 4
+const ISR_RXOIS_MASK: u32 = 0x00000008
+const ISR_RXOIS_SHIFT: u32 = 3
+const ISR_RXUIS_MASK: u32 = 0x00000004
+const ISR_RXUIS_SHIFT: u32 = 2
+const ISR_TXOIS_MASK: u32 = 0x00000002
+const ISR_TXOIS_SHIFT: u32 = 1
+const ISR_TXEIS_MASK: u32 = 0x00000001
+const ISR_TXEIS_SHIFT: u32 = 0
+
+// Raw interrupt status
+const RISR_OFFSET: u32 = 0x00000034
+const RISR_MSTIR_MASK: u32 = 0x00000020
+const RISR_MSTIR_SHIFT: u32 = 5
+const RISR_RXFIR_MASK: u32 = 0x00000010
+const RISR_RXFIR_SHIFT: u32 = 4
+const RISR_RXOIR_MASK: u32 = 0x00000008
+const RISR_RXOIR_SHIFT: u32 = 3
+const RISR_RXUIR_MASK: u32 = 0x00000004
+const RISR_RXUIR_SHIFT: u32 = 2
+const RISR_TXOIR_MASK: u32 = 0x00000002
+const RISR_TXOIR_SHIFT: u32 = 1
+const RISR_TXEIR_MASK: u32 = 0x00000001
+const RISR_TXEIR_SHIFT: u32 = 0
+
+// TX FIFO overflow interrupt clear
+const TXOICR_OFFSET: u32 = 0x00000038
+const TXOICR_TXOICR_MASK: u32 = 0x00000001
+const TXOICR_TXOICR_SHIFT: u32 = 0
+
+// RX FIFO overflow interrupt clear
+const RXOICR_OFFSET: u32 = 0x0000003c
+const RXOICR_RXOICR_MASK: u32 = 0x00000001
+const RXOICR_RXOICR_SHIFT: u32 = 0
+
+// RX FIFO underflow interrupt clear
+const RXUICR_OFFSET: u32 = 0x00000040
+const RXUICR_RXUICR_MASK: u32 = 0x00000001
+const RXUICR_RXUICR_SHIFT: u32 = 0
+
+// Multi-master interrupt clear
+const MSTICR_OFFSET: u32 = 0x00000044
+const MSTICR_MSTICR_MASK: u32 = 0x00000001
+const MSTICR_MSTICR_SHIFT: u32 = 0
+
+// Interrupt clear
+const ICR_OFFSET: u32 = 0x00000048
+const ICR_ICR_MASK: u32 = 0x00000001
+const ICR_ICR_SHIFT: u32 = 0
+
+// DMA control
+const DMACR_OFFSET: u32 = 0x0000004c
+const DMACR_TDMAE_MASK: u32 = 0x00000002
+const DMACR_TDMAE_SHIFT: u32 = 1
+const DMACR_RDMAE_MASK: u32 = 0x00000001
+const DMACR_RDMAE_SHIFT: u32 = 0
+
+// DMA TX data level
+const DMATDLR_OFFSET: u32 = 0x00000050
+const DMATDLR_DMATDL_MASK: u32 = 0x000000ff
+const DMATDLR_DMATDL_SHIFT: u32 = 0
+
+// DMA RX data level
+const DMARDLR_OFFSET: u32 = 0x00000054
+const DMARDLR_DMARDL_MASK: u32 = 0x000000ff
+const DMARDLR_DMARDL_SHIFT: u32 = 0
+
+// Identification register
+const IDR_OFFSET: u32 = 0x00000058
+const IDR_IDCODE_MASK: u32 = 0xffffffff
+const IDR_IDCODE_SHIFT: u32 = 0
+
+// Version ID
+const SSI_VERSION_ID_OFFSET: u32 = 0x0000005c
+const SSI_VERSION_ID_SSI_COMP_VERSION_MASK: u32 = 0xffffffff
+const SSI_VERSION_ID_SSI_COMP_VERSION_SHIFT: u32 = 0
+
+// Data Register 0 (of 36)
+const DR0_OFFSET: u32 = 0x00000060
+const DR0_DR_MASK: u32 = 0xffffffff
+const DR0_DR_SHIFT: u32 = 0
+
+// RX sample delay
+const RX_SAMPLE_DLY_OFFSET: u32 = 0x000000f0
+const RX_SAMPLE_DLY_RSD_MASK: u32 = 0x000000ff
+const RX_SAMPLE_DLY_RSD_SHIFT: u32 = 0
+
+// SPI control
+const SPI_CTRLR0_OFFSET: u32 = 0x000000f4
+const SPI_CTRLR0_XIP_CMD_MASK: u32 = 0xff000000
+const SPI_CTRLR0_XIP_CMD_SHIFT: u32 = 24
+const SPI_CTRLR0_SPI_RXDS_EN_MASK: u32 = 0x00040000
+const SPI_CTRLR0_SPI_RXDS_EN_SHIFT: u32 = 18
+const SPI_CTRLR0_INST_DDR_EN_MASK: u32 = 0x00020000
+const SPI_CTRLR0_INST_DDR_EN_SHIFT: u32 = 17
+const SPI_CTRLR0_SPI_DDR_EN_MASK: u32 = 0x00010000
+const SPI_CTRLR0_SPI_DDR_EN_SHIFT: u32 = 16
+const SPI_CTRLR0_WAIT_CYCLES_MASK: u32 = 0x0000f800
+const SPI_CTRLR0_WAIT_CYCLES_SHIFT: u32 = 11
+const SPI_CTRLR0_INST_L_MASK: u32 = 0x00000300
+const SPI_CTRLR0_INST_L_SHIFT: u32 = 8
+const SPI_CTRLR0_INST_L_NONE: u32 = 0
+const SPI_CTRLR0_INST_L_4B: u32 = 1
+const SPI_CTRLR0_INST_L_8B: u32 = 2
+const SPI_CTRLR0_INST_L_16B: u32 = 3
+const SPI_CTRLR0_ADDR_L_MASK: u32 = 0x0000003c
+const SPI_CTRLR0_ADDR_L_SHIFT: u32 = 2
+const SPI_CTRLR0_TRANS_TYPE_MASK: u32 = 0x00000003
+const SPI_CTRLR0_TRANS_TYPE_SHIFT: u32 = 0
+const SPI_CTRLR0_TRANS_TYPE_1C1A: u32 = 0
+const SPI_CTRLR0_TRANS_TYPE_1C2A: u32 = 1
+const SPI_CTRLR0_TRANS_TYPE_2C2A: u32 = 2
+
+// TX drive edge
+const TXD_DRIVE_EDGE_OFFSET: u32 = 0x000000f8
+const TXD_DRIVE_EDGE_TDE_MASK: u32 = 0x000000ff
+const TXD_DRIVE_EDGE_TDE_SHIFT: u32 = 0

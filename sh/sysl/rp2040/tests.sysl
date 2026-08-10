@@ -1,0 +1,80 @@
+// The one hand-written file in this package, and the only one that may be edited.
+//
+// Everything beside it is generated from Raspberry Pi's `RP2040.svd` and is replaced wholesale when
+// the chip is regenerated. This is the guard on that regeneration: a handful of addresses and field
+// positions read out of the **datasheet** rather than out of the SVD, so that a generator change, a
+// newer SVD, or a filter left switched on has something independent to fail against.
+//
+// It is deliberately small. Pinning every one of 15,313 constants would only assert that the
+// generator agrees with itself, which is what the generator's own golden tests already say. What is
+// worth pinning is the handful a person would notice being wrong, checked against a second source.
+
+module sh.sysl.rp2040
+@tests
+
+import sh.sysl.rp2040.io_bank0
+import sh.sysl.rp2040.pads_bank0
+import sh.sysl.rp2040.sio
+import sh.sysl.rp2040.timer
+import sh.sysl.rp2040.pio0
+import sh.sysl.rp2040.pio1
+import sh.sysl.rp2040.uart0
+import sh.sysl.rp2040.uart1
+import sh.sysl.rp2040.clocks
+import sh.sysl.rp2040.resets
+
+// ## Base addresses, from the RP2040 datasheet's memory map (§ 2.2)
+
+@test("each peripheral sits at the base address the datasheet gives")
+peripherals_sit_where_the_datasheet_says()
+    assert_eq(clocks.BASE, 0x40008000)
+    assert_eq(resets.BASE, 0x4000c000)
+    assert_eq(io_bank0.BASE, 0x40014000)
+    assert_eq(pads_bank0.BASE, 0x4001c000)
+    assert_eq(uart0.BASE, 0x40034000)
+    assert_eq(uart1.BASE, 0x40038000)
+    assert_eq(timer.BASE, 0x40054000)
+end peripherals_sit_where_the_datasheet_says
+
+// **The RP2040's map differs from the RP2350's almost everywhere**, which is the whole reason this
+// file is not a copy of that one with a name changed. The APB block starts at the same 0x40000000
+// and nothing after it lines up: the RP2350 puts `IO_BANK0` at 0x40028000 and this chip puts it at
+// 0x40014000. A test asserting the newer chip's addresses against this SVD would fail on every line,
+// which is the good case — the bad one is a reader assuming the two are the same.
+
+@test("SIO is where the core reaches it in one cycle, outside the APB block entirely")
+sio_sits_outside_the_peripheral_block()
+    assert_eq(sio.BASE, 0xd0000000)
+end sio_sits_outside_the_peripheral_block
+
+// **The two PIO blocks are a megabyte apart**, on the AHB-Lite side rather than the APB one. Worth
+// pinning because the spacing is the thing that is easy to get wrong from memory, and because it
+// differs from the RP2350 again — that chip has *three* PIOs, at 0x50200000, 0x50300000 and
+// 0x50400000, and this one has two.
+
+@test("the PIO blocks are a megabyte apart, and there are two of them")
+pio_blocks_are_spaced_a_megabyte_apart()
+    assert_eq(pio0.BASE, 0x50200000)
+    assert_eq(pio1.BASE, 0x50300000)
+    assert_eq(pio1.BASE - pio0.BASE, 0x100000)
+end pio_blocks_are_spaced_a_megabyte_apart
+
+// ## Field positions, from the register descriptions rather than the map
+
+@test("a register offset runs from the peripheral's base")
+register_offsets_run_from_the_base()
+    // GPIO 0's status is the first word of IO_BANK0 and its control the second — the bank is a pair
+    // of registers per pin, in pin order.
+    assert_eq(io_bank0.GPIO0_STATUS_OFFSET, 0x00)
+    assert_eq(io_bank0.GPIO0_CTRL_OFFSET, 0x04)
+    assert_eq(io_bank0.GPIO1_STATUS_OFFSET, 0x08)
+end register_offsets_run_from_the_base
+
+@test("a field carries the vendor's own names for its values")
+fields_carry_the_vendors_names()
+    // Function 5 is SIO on every pin, which is what a program setting a GPIO to plain input or
+    // output selects. The mask is five bits wide even though the values in use are far fewer.
+    assert_eq(io_bank0.GPIO0_CTRL_FUNCSEL_SIO_0, 5)
+    assert_eq(io_bank0.GPIO0_CTRL_FUNCSEL_MASK, 0x1f)
+    assert_eq(io_bank0.GPIO0_CTRL_FUNCSEL_SHIFT, 0)
+end fields_carry_the_vendors_names

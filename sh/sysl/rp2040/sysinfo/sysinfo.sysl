@@ -1,0 +1,25 @@
+module sh.sysl.rp2040.sysinfo
+
+// The peripheral's base address. Every offset below is from here.
+const BASE: u32 = 0x40000000
+
+// JEDEC JEP-106 compliant chip identifier.
+const CHIP_ID_OFFSET: u32 = 0x00000000
+const CHIP_ID_REVISION_MASK: u32 = 0xf0000000
+const CHIP_ID_REVISION_SHIFT: u32 = 28
+const CHIP_ID_PART_MASK: u32 = 0x0ffff000
+const CHIP_ID_PART_SHIFT: u32 = 12
+const CHIP_ID_MANUFACTURER_MASK: u32 = 0x00000fff
+const CHIP_ID_MANUFACTURER_SHIFT: u32 = 0
+
+// Platform register. Allows software to know what environment it is running in.
+const PLATFORM_OFFSET: u32 = 0x00000004
+const PLATFORM_ASIC_MASK: u32 = 0x00000002
+const PLATFORM_ASIC_SHIFT: u32 = 1
+const PLATFORM_FPGA_MASK: u32 = 0x00000001
+const PLATFORM_FPGA_SHIFT: u32 = 0
+
+// Git hash of the chip source. Used to identify chip version.
+const GITREF_RP2040_OFFSET: u32 = 0x00000040
+const GITREF_RP2040_GITREF_RP2040_MASK: u32 = 0xffffffff
+const GITREF_RP2040_GITREF_RP2040_SHIFT: u32 = 0

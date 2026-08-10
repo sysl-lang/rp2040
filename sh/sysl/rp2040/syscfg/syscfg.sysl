@@ -1,0 +1,81 @@
+// Register block for various chip control signals
+
+module sh.sysl.rp2040.syscfg
+
+// The peripheral's base address. Every offset below is from here.
+const BASE: u32 = 0x40004000
+
+// Processor core 0 NMI source mask
+const PROC0_NMI_MASK_OFFSET: u32 = 0x00000000
+const PROC0_NMI_MASK_PROC0_NMI_MASK_MASK: u32 = 0xffffffff
+const PROC0_NMI_MASK_PROC0_NMI_MASK_SHIFT: u32 = 0
+
+// Processor core 1 NMI source mask
+const PROC1_NMI_MASK_OFFSET: u32 = 0x00000004
+const PROC1_NMI_MASK_PROC1_NMI_MASK_MASK: u32 = 0xffffffff
+const PROC1_NMI_MASK_PROC1_NMI_MASK_SHIFT: u32 = 0
+
+// Configuration for processors
+const PROC_CONFIG_OFFSET: u32 = 0x00000008
+const PROC_CONFIG_PROC1_DAP_INSTID_MASK: u32 = 0xf0000000
+const PROC_CONFIG_PROC1_DAP_INSTID_SHIFT: u32 = 28
+const PROC_CONFIG_PROC0_DAP_INSTID_MASK: u32 = 0x0f000000
+const PROC_CONFIG_PROC0_DAP_INSTID_SHIFT: u32 = 24
+const PROC_CONFIG_PROC1_HALTED_MASK: u32 = 0x00000002
+const PROC_CONFIG_PROC1_HALTED_SHIFT: u32 = 1
+const PROC_CONFIG_PROC0_HALTED_MASK: u32 = 0x00000001
+const PROC_CONFIG_PROC0_HALTED_SHIFT: u32 = 0
+
+// For each bit, if 1, bypass the input synchronizer between that GPIO and the GPIO input register
+// in the SIO. The input synchronizers should generally be unbypassed, to avoid injecting
+// metastabilities into processors. If you're feeling brave, you can bypass to save two cycles of
+// input latency. This register applies to GPIO 0...29.
+const PROC_IN_SYNC_BYPASS_OFFSET: u32 = 0x0000000c
+const PROC_IN_SYNC_BYPASS_PROC_IN_SYNC_BYPASS_MASK: u32 = 0x3fffffff
+const PROC_IN_SYNC_BYPASS_PROC_IN_SYNC_BYPASS_SHIFT: u32 = 0
+
+// For each bit, if 1, bypass the input synchronizer between that GPIO and the GPIO input register
+// in the SIO. The input synchronizers should generally be unbypassed, to avoid injecting
+// metastabilities into processors. If you're feeling brave, you can bypass to save two cycles of
+// input latency. This register applies to GPIO 30...35 (the QSPI IOs).
+const PROC_IN_SYNC_BYPASS_HI_OFFSET: u32 = 0x00000010
+const PROC_IN_SYNC_BYPASS_HI_PROC_IN_SYNC_BYPASS_HI_MASK: u32 = 0x0000003f
+const PROC_IN_SYNC_BYPASS_HI_PROC_IN_SYNC_BYPASS_HI_SHIFT: u32 = 0
+
+// Directly control the SWD debug port of either processor
+const DBGFORCE_OFFSET: u32 = 0x00000014
+const DBGFORCE_PROC1_ATTACH_MASK: u32 = 0x00000080
+const DBGFORCE_PROC1_ATTACH_SHIFT: u32 = 7
+const DBGFORCE_PROC1_SWCLK_MASK: u32 = 0x00000040
+const DBGFORCE_PROC1_SWCLK_SHIFT: u32 = 6
+const DBGFORCE_PROC1_SWDI_MASK: u32 = 0x00000020
+const DBGFORCE_PROC1_SWDI_SHIFT: u32 = 5
+const DBGFORCE_PROC1_SWDO_MASK: u32 = 0x00000010
+const DBGFORCE_PROC1_SWDO_SHIFT: u32 = 4
+const DBGFORCE_PROC0_ATTACH_MASK: u32 = 0x00000008
+const DBGFORCE_PROC0_ATTACH_SHIFT: u32 = 3
+const DBGFORCE_PROC0_SWCLK_MASK: u32 = 0x00000004
+const DBGFORCE_PROC0_SWCLK_SHIFT: u32 = 2
+const DBGFORCE_PROC0_SWDI_MASK: u32 = 0x00000002
+const DBGFORCE_PROC0_SWDI_SHIFT: u32 = 1
+const DBGFORCE_PROC0_SWDO_MASK: u32 = 0x00000001
+const DBGFORCE_PROC0_SWDO_SHIFT: u32 = 0
+
+// Control power downs to memories. Set high to power down memories. Use with extreme caution
+const MEMPOWERDOWN_OFFSET: u32 = 0x00000018
+const MEMPOWERDOWN_ROM_MASK: u32 = 0x00000080
+const MEMPOWERDOWN_ROM_SHIFT: u32 = 7
+const MEMPOWERDOWN_USB_MASK: u32 = 0x00000040
+const MEMPOWERDOWN_USB_SHIFT: u32 = 6
+const MEMPOWERDOWN_SRAM5_MASK: u32 = 0x00000020
+const MEMPOWERDOWN_SRAM5_SHIFT: u32 = 5
+const MEMPOWERDOWN_SRAM4_MASK: u32 = 0x00000010
+const MEMPOWERDOWN_SRAM4_SHIFT: u32 = 4
+const MEMPOWERDOWN_SRAM3_MASK: u32 = 0x00000008
+const MEMPOWERDOWN_SRAM3_SHIFT: u32 = 3
+const MEMPOWERDOWN_SRAM2_MASK: u32 = 0x00000004
+const MEMPOWERDOWN_SRAM2_SHIFT: u32 = 2
+const MEMPOWERDOWN_SRAM1_MASK: u32 = 0x00000002
+const MEMPOWERDOWN_SRAM1_SHIFT: u32 = 1
+const MEMPOWERDOWN_SRAM0_MASK: u32 = 0x00000001
+const MEMPOWERDOWN_SRAM0_SHIFT: u32 = 0

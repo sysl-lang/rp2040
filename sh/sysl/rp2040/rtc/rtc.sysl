@@ -1,0 +1,120 @@
+// Register block to control RTC
+
+module sh.sysl.rp2040.rtc
+
+// The peripheral's base address. Every offset below is from here.
+const BASE: u32 = 0x4005c000
+
+// Divider minus 1 for the 1 second counter. Safe to change the value when RTC is not enabled.
+const CLKDIV_M1_OFFSET: u32 = 0x00000000
+const CLKDIV_M1_CLKDIV_M1_MASK: u32 = 0x0000ffff
+const CLKDIV_M1_CLKDIV_M1_SHIFT: u32 = 0
+
+// RTC setup register 0
+const SETUP_0_OFFSET: u32 = 0x00000004
+const SETUP_0_YEAR_MASK: u32 = 0x00fff000
+const SETUP_0_YEAR_SHIFT: u32 = 12
+const SETUP_0_MONTH_MASK: u32 = 0x00000f00
+const SETUP_0_MONTH_SHIFT: u32 = 8
+const SETUP_0_DAY_MASK: u32 = 0x0000001f
+const SETUP_0_DAY_SHIFT: u32 = 0
+
+// RTC setup register 1
+const SETUP_1_OFFSET: u32 = 0x00000008
+const SETUP_1_DOTW_MASK: u32 = 0x07000000
+const SETUP_1_DOTW_SHIFT: u32 = 24
+const SETUP_1_HOUR_MASK: u32 = 0x001f0000
+const SETUP_1_HOUR_SHIFT: u32 = 16
+const SETUP_1_MIN_MASK: u32 = 0x00003f00
+const SETUP_1_MIN_SHIFT: u32 = 8
+const SETUP_1_SEC_MASK: u32 = 0x0000003f
+const SETUP_1_SEC_SHIFT: u32 = 0
+
+// RTC Control and status
+const CTRL_OFFSET: u32 = 0x0000000c
+const CTRL_FORCE_NOTLEAPYEAR_MASK: u32 = 0x00000100
+const CTRL_FORCE_NOTLEAPYEAR_SHIFT: u32 = 8
+const CTRL_LOAD_MASK: u32 = 0x00000010
+const CTRL_LOAD_SHIFT: u32 = 4
+const CTRL_RTC_ACTIVE_MASK: u32 = 0x00000002
+const CTRL_RTC_ACTIVE_SHIFT: u32 = 1
+const CTRL_RTC_ENABLE_MASK: u32 = 0x00000001
+const CTRL_RTC_ENABLE_SHIFT: u32 = 0
+
+// Interrupt setup register 0
+const IRQ_SETUP_0_OFFSET: u32 = 0x00000010
+const IRQ_SETUP_0_MATCH_ACTIVE_MASK: u32 = 0x20000000
+const IRQ_SETUP_0_MATCH_ACTIVE_SHIFT: u32 = 29
+const IRQ_SETUP_0_MATCH_ENA_MASK: u32 = 0x10000000
+const IRQ_SETUP_0_MATCH_ENA_SHIFT: u32 = 28
+const IRQ_SETUP_0_YEAR_ENA_MASK: u32 = 0x04000000
+const IRQ_SETUP_0_YEAR_ENA_SHIFT: u32 = 26
+const IRQ_SETUP_0_MONTH_ENA_MASK: u32 = 0x02000000
+const IRQ_SETUP_0_MONTH_ENA_SHIFT: u32 = 25
+const IRQ_SETUP_0_DAY_ENA_MASK: u32 = 0x01000000
+const IRQ_SETUP_0_DAY_ENA_SHIFT: u32 = 24
+const IRQ_SETUP_0_YEAR_MASK: u32 = 0x00fff000
+const IRQ_SETUP_0_YEAR_SHIFT: u32 = 12
+const IRQ_SETUP_0_MONTH_MASK: u32 = 0x00000f00
+const IRQ_SETUP_0_MONTH_SHIFT: u32 = 8
+const IRQ_SETUP_0_DAY_MASK: u32 = 0x0000001f
+const IRQ_SETUP_0_DAY_SHIFT: u32 = 0
+
+// Interrupt setup register 1
+const IRQ_SETUP_1_OFFSET: u32 = 0x00000014
+const IRQ_SETUP_1_DOTW_ENA_MASK: u32 = 0x80000000
+const IRQ_SETUP_1_DOTW_ENA_SHIFT: u32 = 31
+const IRQ_SETUP_1_HOUR_ENA_MASK: u32 = 0x40000000
+const IRQ_SETUP_1_HOUR_ENA_SHIFT: u32 = 30
+const IRQ_SETUP_1_MIN_ENA_MASK: u32 = 0x20000000
+const IRQ_SETUP_1_MIN_ENA_SHIFT: u32 = 29
+const IRQ_SETUP_1_SEC_ENA_MASK: u32 = 0x10000000
+const IRQ_SETUP_1_SEC_ENA_SHIFT: u32 = 28
+const IRQ_SETUP_1_DOTW_MASK: u32 = 0x07000000
+const IRQ_SETUP_1_DOTW_SHIFT: u32 = 24
+const IRQ_SETUP_1_HOUR_MASK: u32 = 0x001f0000
+const IRQ_SETUP_1_HOUR_SHIFT: u32 = 16
+const IRQ_SETUP_1_MIN_MASK: u32 = 0x00003f00
+const IRQ_SETUP_1_MIN_SHIFT: u32 = 8
+const IRQ_SETUP_1_SEC_MASK: u32 = 0x0000003f
+const IRQ_SETUP_1_SEC_SHIFT: u32 = 0
+
+// RTC register 1.
+const RTC_1_OFFSET: u32 = 0x00000018
+const RTC_1_YEAR_MASK: u32 = 0x00fff000
+const RTC_1_YEAR_SHIFT: u32 = 12
+const RTC_1_MONTH_MASK: u32 = 0x00000f00
+const RTC_1_MONTH_SHIFT: u32 = 8
+const RTC_1_DAY_MASK: u32 = 0x0000001f
+const RTC_1_DAY_SHIFT: u32 = 0
+
+// RTC register 0 Read this before RTC 1!
+const RTC_0_OFFSET: u32 = 0x0000001c
+const RTC_0_DOTW_MASK: u32 = 0x07000000
+const RTC_0_DOTW_SHIFT: u32 = 24
+const RTC_0_HOUR_MASK: u32 = 0x001f0000
+const RTC_0_HOUR_SHIFT: u32 = 16
+const RTC_0_MIN_MASK: u32 = 0x00003f00
+const RTC_0_MIN_SHIFT: u32 = 8
+const RTC_0_SEC_MASK: u32 = 0x0000003f
+const RTC_0_SEC_SHIFT: u32 = 0
+
+// Raw Interrupts
+const INTR_OFFSET: u32 = 0x00000020
+const INTR_RTC_MASK: u32 = 0x00000001
+const INTR_RTC_SHIFT: u32 = 0
+
+// Interrupt Enable
+const INTE_OFFSET: u32 = 0x00000024
+const INTE_RTC_MASK: u32 = 0x00000001
+const INTE_RTC_SHIFT: u32 = 0
+
+// Interrupt Force
+const INTF_OFFSET: u32 = 0x00000028
+const INTF_RTC_MASK: u32 = 0x00000001
+const INTF_RTC_SHIFT: u32 = 0
+
+// Interrupt status after masking & forcing
+const INTS_OFFSET: u32 = 0x0000002c
+const INTS_RTC_MASK: u32 = 0x00000001
+const INTS_RTC_SHIFT: u32 = 0

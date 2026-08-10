@@ -1,0 +1,59 @@
+// The RP2040's register map — the chip Raspberry Pi puts on the original Pico, as sysl constants.
+//
+// **Every line of sysl in this package is generated.** It comes from Raspberry Pi's own
+// `RP2040.svd`, the CMSIS description shipped in the pico-sdk, by way of
+// [sysl-lang/svd](https://github.com/sysl-lang/svd). Nothing here is hand-written and nothing here
+// should be hand-edited: a correction belongs in the generator or in a newer SVD, and anything typed
+// in by hand is lost the next time the chip is regenerated. `README.md` records the exact command.
+//
+// The one exception is `sh/sysl/rp2040/tests.sysl`, which is the guard on that regeneration and says
+// so at the top of itself.
+//
+// There is no `dependencies` block because this depends on nothing. It is constants.
+//
+// This is the block a *consumer* writes to reach this package:
+//
+//     dependencies {
+//       rp2040 { git = "github.com/sysl-lang/rp2040", version = "0.1.0" }
+//     }
+//
+// The coordinate is identity rather than a URL, so it carries no `https://`, and the version is the
+// tag `v0.1.0` on this repository.
+
+package {
+  name    = "rp2040"
+  version = "0.1.0"
+}
+
+// **There is no `requires` block, and here that is trivially true rather than hard won.**
+//
+// A capability clause is a claim about what a library *does*, and this one does nothing at all. It
+// declares constants: base addresses, register offsets, field masks and shifts, and the vocabulary
+// the vendor gives a field's values. No function, no storage, no C. It allocates nothing, calls
+// nothing and touches no operating system, so it is usable from a freestanding target with no heap —
+// which is the only kind of target that wants it.
+//
+// **It carries no `@link` directive either**, for the same reason: there is no implementation to
+// link.
+
+// ## What it costs, which is not what you would guess
+//
+// **Nothing in the binary.** Constants nobody names do not reach the executable: a program compiled
+// against this package is byte-identical to one compiled without it. So the map being complete costs
+// a chip's flash nothing, which matters more here than on the RP2350 — this part has 264K of SRAM
+// and 2M of flash on a stock board.
+//
+// **At compile time it is the whole package, not the module you import.** Measured on the RP2350's
+// larger map: compiling against one of these as a *source root* adds a couple of seconds to every
+// build, and as a prebuilt `.syslib` artifact a fraction of one — and both are flat whether a
+// program imports one module or all of them. One module per peripheral is therefore a readability
+// decision, and a good one, but it does not make an unused peripheral free. This map is a little
+// over half the RP2350's, so it costs proportionately less.
+
+// ## This is not the RP2350's map with a name changed
+//
+// The two chips share a vendor, a naming style and the 0x40000000 APB base, and almost nothing else:
+// `IO_BANK0` is at 0x40014000 here and 0x40028000 there, this part has two PIO blocks where that one
+// has three, and this one's timer is `TIMER` where that one's is `TIMER0`. A driver written against
+// one will compile against the other and address the wrong silicon, so a program picks its map
+// deliberately.
