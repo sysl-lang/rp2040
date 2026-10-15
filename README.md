@@ -2,6 +2,8 @@
 
 The RP2040's register map, as sysl constants — the chip on the original Raspberry Pi Pico.
 
+*An independent sysl package for the RP2040. It is not affiliated with or endorsed by Raspberry Pi Ltd.*
+
 Base addresses, register offsets, field masks and shifts, and the vendor's own names for the values a
 field takes. One module per peripheral, 37 of them, 15,313 constants.
 
